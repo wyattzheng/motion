@@ -27,3 +27,5 @@ anim.play();
 ## playground
 
 在练习操场中, 你可以在网页中快速制作动画, 并自动保存到浏览器中：
+
+<https://darling-pixie-b2d3d4.netlify.app/>
