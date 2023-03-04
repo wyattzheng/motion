@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>Motion PlayGround</title>
+    <link rel="stylesheet" data-name="vs/editor/editor.main"
+        href="https://cdn.jsdelivr.net/npm/monaco-editor@0.36.1/min/vs/editor/editor.main.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@5.1.0/github-markdown-dark.css">    
+        
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+        var require = { paths: { 'vs': 'https://cdn.jsdelivr.net/npm/monaco-editor@0.36.1/min/vs' } }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.36.1/min/vs/loader.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.36.1/min/vs/editor/editor.main.nls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.36.1/min/vs/editor/editor.main.js"></script>
+    <style>
+        html,
+        body {
+            margin: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            display: flex;
+            flex-direction: row;
+        }
+
+        main {
+            flex: 1;
+            overflow-y: scroll;
+            background-color: #333;
+        }
+
+        #play {
+            display: flex;
+            flex-direction: row;
+            height: 90%;
+        }
+
+        aside {
+            width: 200px;
+            background-color: rgb(32, 33, 35);
+            padding: 10px 5px;
+            user-select: none;
+            position: relative;
+        }
+
+        #editor {
+            height: 100% !important;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        #live {
+            flex: 1;
+            background-color: #CCC;
+            height: 100%;
+        }
+
+        #usage {
+            padding: 30px;
+            min-height: 100%;
+        }
+
+        .add-new,
+        .file-item {
+            height: 30px;
+            line-height: 30px;
+            border-radius: 5px;
+            text-align: center;
+            cursor: pointer;
+            font-size: 13px;
+            color: #CCC;
+            border: 1px solid #CCC;
+        }
+
+        .files {
+            padding: 15px 0px;
+        }
+
+        .file-item {
+            background-color: unset;
+            border: 1px solid #666;
+            transition: all 0.2s;
+            color: #AAA;
+            margin-bottom: 10px;
+            position: relative;
+        }
+
+        .file-item-current {
+            background-color: #AAA;
+            color: #333;
+        }
+        .delete-item{
+            position: absolute;
+            right: 10px;
+            top: 11px;
+            font-size: 14px;
+            line-height: 5px;
+            display: none;
+        }
+        .delete-item:hover{
+            color: #FFF;
+        }
+        .file-item:hover .delete-item{
+            display: block;
+        }
+
+
+        @media screen and (max-width: 1000px) {
+            #play {
+                flex-direction: column;
+                height: 95%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <aside>
+        <div class="add-new" onclick="addNewFile()">
+            + New Motion File
+        </div>
+        <div class="files">
+        </div>
+    </aside>
+    <main>
+        <div id="play">
+            <div id="editor" style="height:400px;border:1px solid black;"></div>
+            <iframe id="live"></iframe>
+        </div>
+        <div id="usage" class="markdown-body"></div>
+    </main>
+</body>
+<script>
+    let current = "";
+    let currentTitle = "";
+    let newAnimCount = 0;
+    const motionScript = fetch("./motion.js").then(res => res.text())
+    fetch("./usage.md").then(res => res.text()).then((text) => {
+        console.error(text, marked.parse(text))
+        document.querySelector("#usage").innerHTML = marked.parse(text);
+    });
+
+    function debounce(fn, delay) {
+        let timer
+        return function(...args) {
+            if (timer) clearTimeout(timer)
+            timer = setTimeout(() => fn.apply(this, args), delay)
+        }
+    }
+
+    const editor = monaco.editor.create(document.getElementById('editor'), {
+        value: ``,
+        language: 'javascript',
+        theme: 'vs-dark',
+        height: "100%"
+    });
+
+    function loadFiles(focusLastOne = false) {
+        const files = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key.startsWith("motion-file-")) {
+                try {
+                    const obj = JSON.parse(localStorage.getItem(key));
+                    files.push([key, obj]);
+                } catch (e) { }
+            }
+        }
+        files.sort((a, b) => (a[1].createdTime - b[1].createdTime));
+        const container = document.querySelector(".files");
+        container.innerHTML = '';
+        files.forEach(([key, file]) => {
+            const elem = document.createElement("div");
+            container.appendChild(elem);
+            elem.className = "file-item"
+            elem.dataset.key = key;
+            elem.innerHTML = `
+                <span>${file.title}</span>
+                <div class="delete-item">×</div>
+            `
+            elem.querySelector(".delete-item").addEventListener("click", deleteFile);
+            elem.addEventListener("click", () => {
+                current = key;
+                currentTitle = file.title;
+                editor.setValue(file.value);
+                updateLive();
+                loadFiles();
+            })
+        })
+
+        const play = document.querySelector("#play");
+        if (files.length > 0) {
+            play.style.display = "flex";
+            if (focusLastOne) {
+                const items = document.querySelectorAll(".file-item");
+                items.length > 0 && items[items.length - 1].click();
+            }
+        } else {
+            play.style.display = "none";
+        }
+
+        document.querySelectorAll(".file-item").forEach((elem) => {
+            if (elem.dataset.key === current) {
+                elem.classList.add("file-item-current")
+            }
+        })
+    }
+
+    function deleteFile(e) {
+        e.stopPropagation();
+        const target = e.currentTarget;
+        if (target.innerText !== "✓") {
+            target.innerText = "✓";
+            target.timer = setTimeout(() => {
+                target.innerText = "×";
+            }, 1000);
+            return;
+        };
+        clearTimeout(target.timer);
+        const key = target.parentNode.dataset.key;
+        localStorage.removeItem(key);
+        const isCurrent = key === current;
+        isCurrent && (current = '')
+        loadFiles(isCurrent);
+    }
+
+    async function updateLive() {
+        await motionScript;
+        document.querySelector("#live").outerHTML = "<iframe id='live'></iframe>"
+        const live = document.querySelector("#live");
+        const doc = live.contentDocument;
+        const mscript = document.createElement("script");
+        mscript.textContent = await motionScript;
+        const script = document.createElement("script");
+        script.textContent = editor.getValue();
+        doc.body.appendChild(mscript);
+        doc.body.appendChild(script);
+    }
+
+    function updateFile(key, title, value) {
+        let createdTime = Date.now();
+        let item = localStorage.getItem(key);
+        try {
+            createdTime = JSON.parse(item).createdTime;
+        } catch (err) {
+
+        }
+
+        localStorage.setItem(key, JSON.stringify({
+            title,
+            value,
+            createdTime
+        }));
+    }
+
+    function addNewFile() {
+        const date = new Date();
+        const title = `新动画 #${++newAnimCount}`;
+        const def = `
+// 标题: ${title}
+
+const anim = animation({ loop: true });
+
+anim.action(0, () => {
+    document.body.innerHTML = div("label");
+});
+
+anim.action([0, 4000], (x) => {
+    text("label", "hello, world!".slice(0, x * 20));
+})
+
+anim.play();
+`.trim();
+        updateFile(`motion-file-${Date.now()}`, title, def)
+        loadFiles(document.querySelectorAll(".file-item").length === 0);
+    }
+
+    loadFiles(true);
+
+    const onValueChanged = debounce(() => {
+        if (!current) {
+            return;
+        }
+        content = editor.getValue();
+        const firstLine = content.split("\n")[0];
+        if (firstLine && firstLine.startsWith("// 标题: ")) {
+            const newTitle = firstLine.slice("// 标题: ".length);
+            if (newTitle !== currentTitle) {
+                currentTitle = newTitle;
+                updateFile(current, newTitle, content);
+                loadFiles();
+            }
+        }
+        updateFile(current, currentTitle, content);
+        updateLive();
+    }, 500)
+
+    editor.getModel().onDidChangeContent(onValueChanged);
+
+    window.addEventListener("resize", () => {
+        editor.layout();
+    })
+</script>
+
+</html>
