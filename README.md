@@ -1,10 +1,8 @@
 # motion
 
-motion 是一个快速制作演示动画的工具, 面向 Web 开发者.
+motion 是一个快速制作演示动画的工具, 面向 Web 开发者
 
-使用 motion 可以快速制作一段简短的动画来表达你的想法, 
-
-只需使用`JavaScript`、`HTML` 来快速制作你的动画.
+只需使用 `JavaScript`、`HTML` 就可以快速制作一段简短的动画来表达你的想法
 
 ---
 
@@ -26,6 +24,6 @@ anim.play();
 
 ## playground
 
-在练习操场中, 你可以在网页中快速制作动画, 并自动保存到浏览器中：
+在练习操场中, 你可以在网页中快速制作动画并查看效果, 你的工作会自动保存到浏览器中：
 
 <https://darling-pixie-b2d3d4.netlify.app/>
