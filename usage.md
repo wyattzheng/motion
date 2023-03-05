@@ -85,3 +85,7 @@ motion 提供了多个帮助函数, 用于快速修改 HTML对象的 样式、�
 
 该函数会查找类名为 `className` 的所有 `DOM` 对象, 并修改它们的 `innerText` 为 `content`。
 
+### style(className, styleName, styleValue)
+
+该函数会查找类名为 `className` 的所有 `DOM` 对象, 并修改它们的样式 `styleName` 为 `styleValue`。
+

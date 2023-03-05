@@ -161,16 +161,30 @@ const canvas = (name, style, children) => buildHTML("canvas", name, style, child
 
 // helper functions:
 
+const findAll = (name) => {
+    const result = Array.from(document.querySelectorAll('.' + name));
+    if (result.length === 0) {
+        return Array.from(document.querySelectorAll(name));
+    }
+    return result;
+}
+
 const move = (name, x, y) => {
-    document.querySelectorAll('.' + name).forEach((elem) => {
+    findAll(name).forEach((elem) => {
         elem.style.left = `${x}px`;
         elem.style.top = `${y}px`;
     })
 }
 
 const text = (name, text) => {
-    document.querySelectorAll('.' + name).forEach((elem) => {
+    findAll(name).forEach((elem) => {
         elem.innerText = text;
+    })
+}
+
+const style = (name, styleName, styleValue) => {
+    findAll(name).forEach((elem) => {
+        elem.style[styleName] = styleValue;
     })
 }
 

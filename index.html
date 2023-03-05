@@ -170,7 +170,7 @@
                     {
                         label: 'anim.action',
                         kind: monaco.languages.CompletionItemKind.Function,
-                        insertText: 'anim.action([$0], (x) => {\n    \n});\n',
+                        insertText: 'anim.action([$0], (x) => {\n    \n})',
                         insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
                         range: range
                     }
@@ -305,7 +305,8 @@ const anim = animation({ loop: true });
 
 anim.action(0, () => {
     document.body.innerHTML = div("label");
-});
+    // style("body", "background", "white");
+})
 
 anim.action([0, 4000], (x) => {
     text("label", "hello, world!".slice(0, x * 20));
