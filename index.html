@@ -145,7 +145,6 @@
         monaco.languages.typescript.javascriptDefaults.addExtraLib(text);
     })
     fetch("./usage.md").then(res => res.text()).then((text) => {
-        console.error(text, marked.parse(text))
         document.querySelector("#usage").innerHTML = marked.parse(text);
     });
 
@@ -156,6 +155,31 @@
             timer = setTimeout(() => fn.apply(this, args), delay)
         }
     }
+
+    monaco.languages.registerCompletionItemProvider('javascript', {
+        provideCompletionItems: function(model, position) {
+            var word = model.getWordUntilPosition(position);
+            var range = {
+                startLineNumber: position.lineNumber,
+                endLineNumber: position.lineNumber,
+                startColumn: word.startColumn,
+                endColumn: word.endColumn
+            };
+            return {
+                suggestions: [
+                    {
+                        label: 'anim.action',
+                        kind: monaco.languages.CompletionItemKind.Function,
+                        insertText: 'anim.action([$0], (x) => {\n    \n});\n',
+                        insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+                        range: range
+                    }
+                ]
+            };
+        },
+
+        triggerCharacters: ["a", "n", "i", "m"]
+    });
 
     monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
         noSemanticValidation: false,
