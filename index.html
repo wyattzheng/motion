@@ -141,6 +141,9 @@
     let currentTitle = "";
     let newAnimCount = 0;
     const motionScript = fetch("./motion.js").then(res => res.text())
+    const motionTypeDef = fetch("./motion.d.ts").then(res => res.text()).then((text) => {
+        monaco.languages.typescript.javascriptDefaults.addExtraLib(text);
+    })
     fetch("./usage.md").then(res => res.text()).then((text) => {
         console.error(text, marked.parse(text))
         document.querySelector("#usage").innerHTML = marked.parse(text);
@@ -154,6 +157,15 @@
         }
     }
 
+    monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
+        noSemanticValidation: false,
+        noSyntaxValidation: false
+    });
+    monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
+        target: monaco.languages.typescript.ScriptTarget.ES6,
+        allowNonTsExtensions: true
+    });
+    
     const editor = monaco.editor.create(document.getElementById('editor'), {
         value: ``,
         language: 'javascript',
