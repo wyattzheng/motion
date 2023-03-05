@@ -18,4 +18,4 @@ declare var animation: (option?: CreateOption) => MotionAnimation;
 declare var div: BuilderFunction;
 declare var move: (className: string, x: number, y: number) => void;
 declare var text: (className: string, content: string) => void;
-declare var style: (className: string, styleName: string, styleValue: string) => void;
+declare var style: (className: string, styleName: string, styleValue: string | number) => void;
