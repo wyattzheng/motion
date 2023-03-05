@@ -137,24 +137,19 @@
     </main>
 </body>
 <script>
-    let current = "";
-    let currentTitle = "";
-    let newAnimCount = 0;
-    const motionScript = fetch("./motion.js").then(res => res.text())
+function debounce(fn, delay) {
+    let timer
+    return function(...args) {
+        if (timer) clearTimeout(timer)
+        timer = setTimeout(() => fn.apply(this, args), delay)
+    }
+}
+</script>
+<script>
+    // monaco editor
     const motionTypeDef = fetch("./motion.d.ts").then(res => res.text()).then((text) => {
         monaco.languages.typescript.javascriptDefaults.addExtraLib(text);
     })
-    fetch("./usage.md").then(res => res.text()).then((text) => {
-        document.querySelector("#usage").innerHTML = marked.parse(text);
-    });
-
-    function debounce(fn, delay) {
-        let timer
-        return function(...args) {
-            if (timer) clearTimeout(timer)
-            timer = setTimeout(() => fn.apply(this, args), delay)
-        }
-    }
 
     monaco.languages.registerCompletionItemProvider('javascript', {
         provideCompletionItems: function(model, position) {
@@ -196,7 +191,40 @@
         theme: 'vs-dark',
         height: "100%"
     });
-
+</script>
+<script>
+    // usage
+    fetch("./usage.md").then(res => res.text()).then((text) => {
+        document.querySelector("#usage").innerHTML = marked.parse(text);
+    });
+</script>
+<script>
+    // live
+    let currentContent = '';
+    async function updateLive() {
+        if (currentContent === editor.getValue()) {
+            return;
+        }
+        currentContent = editor.getValue();
+        await motionScript;
+        let live = document.querySelector("#live");
+        live.outerHTML = "<iframe id='live'></iframe>"
+        live = document.querySelector("#live");
+        const doc = live.contentDocument;
+        const mscript = document.createElement("script");
+        mscript.textContent = await motionScript;
+        const script = document.createElement("script");
+        script.textContent = editor.getValue();
+        doc.body.appendChild(mscript);
+        doc.body.appendChild(script);
+    }
+</script>
+<script>
+    let current = "";
+    let currentTitle = "";
+    let newAnimCount = 0;
+    
+    const motionScript = fetch("./motion.js").then(res => res.text())
     function loadFiles(focusLastOne = false) {
         const files = [];
         for (let i = 0; i < localStorage.length; i++) {
@@ -266,19 +294,6 @@
         loadFiles(isCurrent);
     }
 
-    async function updateLive() {
-        await motionScript;
-        document.querySelector("#live").outerHTML = "<iframe id='live'></iframe>"
-        const live = document.querySelector("#live");
-        const doc = live.contentDocument;
-        const mscript = document.createElement("script");
-        mscript.textContent = await motionScript;
-        const script = document.createElement("script");
-        script.textContent = editor.getValue();
-        doc.body.appendChild(mscript);
-        doc.body.appendChild(script);
-    }
-
     function updateFile(key, title, value) {
         let createdTime = Date.now();
         let item = localStorage.getItem(key);
@@ -324,7 +339,7 @@ anim.play();
         if (!current) {
             return;
         }
-        content = editor.getValue();
+        let content = editor.getValue();
         const firstLine = content.split("\n")[0];
         if (firstLine && firstLine.startsWith("// 标题: ")) {
             const newTitle = firstLine.slice("// 标题: ".length);
